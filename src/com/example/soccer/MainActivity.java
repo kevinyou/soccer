@@ -1,8 +1,11 @@
 package com.example.soccer;
 
-import android.os.Bundle;
 import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
 import android.view.Menu;
+import android.view.View;
+
 
 public class MainActivity extends Activity {
 
@@ -19,4 +22,21 @@ public class MainActivity extends Activity {
 		return true;
 	}
 
+	public void play(View view) {
+		// replace null with PlayActivity
+		Intent playIntent = new Intent(this, null);
+		startActivity(playIntent);
+	}
+
+	public void history(View view) {
+		// replace null with PlayActivity
+		Intent historyIntent = new Intent(this, null);
+		startActivity(historyIntent);
+	}
+	
+	public void help(View view) {
+		// replace null with PlayActivity
+		Intent helpIntent = new Intent(this, null);
+		startActivity(helpIntent);
+	}
 }
