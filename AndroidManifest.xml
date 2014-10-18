@@ -21,7 +21,14 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+             <EditText android:id="@+id/edit_message"
+		        android:layout_width="wrap_content"
+		        android:layout_height="wrap_content" />
         </activity>
+        <meta-data
+		    android:name="com.google.android.maps.v2.API_KEY"
+		    android:value="AIzaSyDYMMfoQo3dPFW7uGQt_9QRgBHcsoF-sYQ"/>
+        
     </application>
 
 </manifest>
