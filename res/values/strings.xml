@@ -7,5 +7,6 @@
     <string name="play_button">Play</string>
     <string name="history_button">History</string>
     <string name="help_button">Help</string>
+    <string name="title_activity_play">PlayActivity</string>
 
 </resources>

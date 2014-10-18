@@ -24,7 +24,7 @@ public class MainActivity extends Activity {
 
 	public void play(View view) {
 		// replace null with PlayActivity
-		Intent playIntent = new Intent(this, null);
+		Intent playIntent = new Intent(this, PlayActivity.class);
 		startActivity(playIntent);
 	}
 
