@@ -3,7 +3,6 @@ package com.example.soccer;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.location.Location;
-import android.location.LocationListener;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -11,23 +10,36 @@ import android.view.MenuItem;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMapOptions;
 import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 
 public class PlayActivity extends Activity implements LocationListener, GooglePlayServicesClient.ConnectionCallbacks, GooglePlayServicesClient.OnConnectionFailedListener{
 
 	private MapFragment mapFragment;
+	
 	private GoogleMap googleMap;
+	
 	private LocationClient locationClient;
+	
 	private Location currentLocation;
 
+	private LocationRequest locationRequest;
+	
 	@SuppressLint("NewApi")
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_play);
+		
+		locationRequest = LocationRequest.create();
+		locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+		locationRequest.setInterval(17);
 		
 		locationClient = new LocationClient(this, this, this);
 		locationClient.connect();
@@ -35,6 +47,9 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 		mapFragment = (MapFragment)getFragmentManager().findFragmentById(R.id.map);
 		googleMap = mapFragment.getMap();
 		googleMap.setMyLocationEnabled(true);
+		
+		GoogleMapOptions option = new GoogleMapOptions();
+		option.camera(new CameraPosition(new LatLng(30.2500, 97.7500), 13, 0, 0));
 	}
 
 	@Override
@@ -58,26 +73,7 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 
 	@Override
 	public void onLocationChanged(Location newLoc) {
-		
-		
-	}
-
-	@Override
-	public void onProviderDisabled(String arg0) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void onProviderEnabled(String arg0) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void onStatusChanged(String arg0, int arg1, Bundle arg2) {
-		// TODO Auto-generated method stub
-		
+		currentLocation = newLoc;
 	}
 
 	@Override
@@ -89,6 +85,7 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 	@Override
 	public void onConnected(Bundle arg0) {
 		// TODO Auto-generated method stub
+		locationClient.requestLocationUpdates(locationRequest, this);
 		currentLocation = locationClient.getLastLocation();
 		LatLng currentLocLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
 		googleMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocLatLng));
