@@ -1,13 +1,11 @@
 package com.example.soccer;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.net.URI;
+import java.util.Map;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.LinearLayout;
@@ -21,18 +19,13 @@ public class HistoryActivity extends Activity {
 		setContentView(R.layout.activity_history);
 		LinearLayout linearLayout = (LinearLayout)findViewById(R.id.info);
 		linearLayout.setOrientation(LinearLayout.VERTICAL);
-		try {
-			BufferedReader historyLog = new BufferedReader(new FileReader(new File (new URI("/history.log"))));
-			TextView temp = new TextView(this);
-			temp.setText(historyLog.readLine());
-			linearLayout.addView(temp);
-		} catch(IOException e){
-			
-		} catch (Exception e) {
-			TextView temp = new TextView(this);
-			temp.setText("No history");
-			linearLayout.addView(temp);
-			e.printStackTrace();
+		SharedPreferences sp = getSharedPreferences("com.example.soccer.DATA", MODE_PRIVATE);
+		Map<String, ?> spTree = sp.getAll();
+		for (Map.Entry<String, ?> entry : spTree.entrySet()){
+			Log.v("ADDING STUFF", entry.toString());
+			TextView text = new TextView(this);
+			text.setText(entry.getKey() + " " + entry.getValue());
+			linearLayout.addView(text);
 		}
 	}
 

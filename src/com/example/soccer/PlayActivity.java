@@ -6,9 +6,11 @@ import java.io.Writer;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
@@ -46,13 +48,13 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 	
 	private LocationRequest locationRequest;
 	
-	private ArrayList<String> history;
-	
 	private static final Calendar c = Calendar.getInstance();
 	
 	private static final double EARTH_RADIUS = 6371000;
 	
 	private double ballLat, ballLong;
+	
+	private int kicks;
 	
 	private Circle goalCircle;
 	private Circle ballCircle;
@@ -103,7 +105,7 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 	
 	public void startNewGame(){
 		
-		history = new ArrayList<String>();
+		kicks = 0;
 		
 		locationClient.requestLocationUpdates(locationRequest, this);
 		currentLocation = locationClient.getLastLocation();
@@ -135,12 +137,12 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 	}
 
 	public void kick(){
-		Log.v("TESTINGU", "FALCON KICK");
+		Log.v("TESTINGU", "FALCON KICK " + kicks);
 		LatLng playerLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
 		LatLng ballLatLng = new LatLng(ballLat, ballLong);
 		double playerBallDist = dist(playerLatLng, ballLatLng);
 		if (playerBallDist <= 20){
-			history.add(c.getTime() + " " + playerLatLng);
+			kicks++;
 			LatLng goalLatLng = goalCircle.getCenter();
 			ballLatLng = ballMove(ballLatLng, bearing(playerLatLng, ballLatLng), playerBallDist);
 			//ballLatLng = goalCircle.getCenter();
@@ -216,6 +218,7 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 		return super.onOptionsItemSelected(item);
 	}
 
+	@SuppressLint("NewApi")
 	@Override
 	public void onLocationChanged(Location newLoc) {
 		currentLocation = newLoc;
@@ -225,15 +228,11 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 			toastDisplayed = true;
 			victoryToast.show();
 			try {
-				File historyLog = new File(new URI("/history.log"));
-				historyLog.delete();
-				historyLog.createNewFile();
-				Writer writer = new FileWriter(historyLog);
-				for (String entry : history){
-					writer.append(entry + "\n");
-				}
-				writer.flush();
-				writer.close();
+				SharedPreferences sp = getSharedPreferences("com.example.soccer.DATA", MODE_PRIVATE);
+				SharedPreferences.Editor spEditor = sp.edit();
+				Date d = c.getTime();	
+				spEditor.putInt(d.toString(), kicks);
+				spEditor.apply();
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
