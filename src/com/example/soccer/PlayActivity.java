@@ -2,11 +2,13 @@ package com.example.soccer;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
@@ -23,7 +25,9 @@ import com.google.android.gms.maps.model.LatLng;
 
 public class PlayActivity extends Activity implements LocationListener, GooglePlayServicesClient.ConnectionCallbacks, GooglePlayServicesClient.OnConnectionFailedListener{
 
-	private boolean running;
+	private boolean won, toastDisplayed;
+	
+	private Toast victoryToast;
 	
 	private MapFragment mapFragment;
 	
@@ -50,6 +54,8 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_play);
 		
+		victoryToast = Toast.makeText(this, "You won! Tap the screen to make a new field.", 2000);
+		
 		locationRequest = LocationRequest.create();
 		locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 		locationRequest.setInterval(17);
@@ -66,6 +72,11 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 		googleMap.setOnMapClickListener(new GoogleMap.OnMapClickListener(){
 			public void onMapClick(LatLng point){
 				//kick ball
+//				if (won){
+//					startNewGame();
+//				} else {
+//					kick();
+//				}
 				kick();
 			}
 		});
@@ -78,25 +89,54 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 		
 	}
 	
-	public void startGame(){
-		double fps = 30.0;
-		while (running){
-			try{
-				long start = System.currentTimeMillis();
-				update();
-				draw();
-				long finish = System.currentTimeMillis();
-				if (finish - start < 33){
-					wait(33 - finish - start);
-				}
-			} catch (Exception e){
-				e.printStackTrace();
-			}
-		}
+	public void startNewGame(){
+		
+		won = false;
+		toastDisplayed = false;
+		
+		locationClient.requestLocationUpdates(locationRequest, this);
+		currentLocation = locationClient.getLastLocation();
+		Log.v("TESTINGU", "WTFBBZ" + currentLocation.getLatitude() + " " + currentLocation.getLongitude());
+		LatLng currentLocLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+		googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLocLatLng, 20));
+		
+		//generate ball and goal
+		CircleOptions goalCircleOptions = new CircleOptions()
+			.center(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude() - .003))
+			.radius(50);
+		
+		goalCircle = googleMap.addCircle(goalCircleOptions);
+		
+		ballLat = currentLocation.getLatitude();
+		ballLong = currentLocation.getLongitude() - .0002;
 	}
 	
-	public void update(){
-		
+	public void draw(){
+		if (ballCircle != null) ballCircle.remove();
+		CircleOptions ballCircleOptions = new CircleOptions()
+			.center(new LatLng(ballLat, ballLong))
+			.fillColor(Color.BLACK)
+			.radius(10);
+		ballCircle = googleMap.addCircle(ballCircleOptions);
+	}
+
+	public void kick(){
+		LatLng playerLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+		LatLng ballLatLng = new LatLng(ballLat, ballLong);
+		long start = System.currentTimeMillis();
+		double playerBallDist = dist(playerLatLng, ballLatLng);
+		if (playerBallDist <= 10){
+			LatLng goalLatLng = goalCircle.getCenter();
+			ballLatLng = ballMove(ballLatLng, bearing(playerLatLng, ballLatLng), playerBallDist);
+			ballLat = ballLatLng.latitude;
+			ballLong = ballLatLng.longitude;
+			Log.v("TESTINGU", "FALCON KICK" + ballLatLng);
+			if (dist(goalLatLng, ballLatLng) <= goalCircle.getRadius()){
+				//won = true;
+			}
+		}
+		long finish = System.currentTimeMillis();
+		Log.v("TIMING", "kick() calculations took " + (finish - start) + " milliseconds");
 	}
 	
 	public double dist(LatLng a, LatLng b){
@@ -112,27 +152,36 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 		
 	}
 	
-	public void draw(){
-		if (ballCircle != null) ballCircle.remove();
-		CircleOptions ballCircleOptions = new CircleOptions()
-			.center(new LatLng(ballLat, ballLong))
-			.radius(10);
-		ballCircle = googleMap.addCircle(ballCircleOptions);
+	public double bearing(LatLng a, LatLng b){
+		double alat = Math.toRadians(a.latitude);
+		double alng = Math.toRadians(a.longitude);
+		double blat = Math.toRadians(b.latitude);
+		double blng = Math.toRadians(b.longitude);
+		
+		double y = Math.sin(blng - alng) * Math.cos(alat);
+		double x = Math.cos(alat)  * Math.sin(blat) - Math.sin(alat) * Math.cos(blat) * Math.cos(blng - alng);
+		
+		double bearing = Math.atan2(y, x);
+		
+		Log.v("Bearing", "" + bearing);
+		
+		return bearing;
+		
 	}
-
-	public void kick(){
-		LatLng playerLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-		LatLng ballLatLng = new LatLng(ballLat, ballLong);
-		Log.v("TESTINGU", "FALCON KICK");
-		if (dist(playerLatLng, ballLatLng) <= 10){
-			ballLong -= .0001;
-			//replace with actual code later
-			LatLng goalLatLng = goalCircle.getCenter();
-			ballLatLng = new LatLng(ballLat, ballLong);
-			if (dist(goalLatLng, ballLatLng) <= goalCircle.getRadius()){
-				//you win! Yay!
-			}
-		}
+	
+	public LatLng ballMove(LatLng initial, double bearing, double distance){
+		
+		if (distance == 0) return initial;
+		
+		distance = 1 / distance;
+		double lata = Math.toRadians(initial.latitude);
+		double lnga = Math.toRadians(initial.longitude);
+		
+		double finalLat = Math.asin(Math.sin(lata) * Math.cos(distance / EARTH_RADIUS) + Math.cos(lata) * Math.sin(distance/ EARTH_RADIUS) * Math.cos(bearing));
+		double finalLng = lnga + Math.atan2(Math.sin(bearing) * Math.sin(distance / EARTH_RADIUS) * Math.cos(lata), Math.cos(distance/ EARTH_RADIUS) - Math.sin(lata) * Math.sin(finalLat));
+		
+		return new LatLng(Math.toDegrees(finalLat), Math.toDegrees(finalLng));
+		
 	}
 	
 	@Override
@@ -158,6 +207,11 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 	public void onLocationChanged(Location newLoc) {
 		currentLocation = newLoc;
 		Log.v("TESTINGU", "UPDATED BITCH" + currentLocation.getLatitude() + " " + currentLocation.getLongitude());
+		googleMap.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude())));
+		if (!toastDisplayed){
+			toastDisplayed = true;
+			victoryToast.show();
+		}
 		draw();
 	}
 
@@ -170,31 +224,11 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 	@Override
 	public void onConnected(Bundle arg0) {
 		// TODO Auto-generated method stub
-		locationClient.requestLocationUpdates(locationRequest, this);
-		currentLocation = locationClient.getLastLocation();
-		Log.v("TESTINGU", "WTFBBZ" + currentLocation.getLatitude() + " " + currentLocation.getLongitude());
-		LatLng currentLocLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-		googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLocLatLng, 20));
-		
-		//generate ball and goal
-		CircleOptions goalCircleOptions = new CircleOptions()
-			.center(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude() - .001))
-			.radius(50);
-		
-		goalCircle = googleMap.addCircle(goalCircleOptions);
-		
-		ballLat = currentLocation.getLatitude();
-		ballLong = currentLocation.getLongitude();
-		
-//		running = true;
-//		
-//		startGame();
-		
+		startNewGame();
 	}
 
 	@Override
 	public void onDisconnected() {
 		//connection lost
-		running = false;
 	}
 }
