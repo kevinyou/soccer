@@ -30,13 +30,12 @@ public class MainActivity extends Activity {
 
 	public void history(View view) {
 		// replace null with PlayActivity
-		Intent historyIntent = new Intent(this, null);
+		Intent historyIntent = new Intent(this, HistoryActivity.class);
 		startActivity(historyIntent);
 	}
 	
-	public void help(View view) {
-		// replace null with PlayActivity
-		Intent helpIntent = new Intent(this, null);
+	public void about(View view) {
+		Intent helpIntent = new Intent(this, AboutActivity.class);
 		startActivity(helpIntent);
 	}
 }

@@ -28,15 +28,15 @@
        android:text="@string/history_button" />
 
   <Button
-      android:id="@+id/help_button"
+      android:id="@+id/about_button"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       android:layout_alignLeft="@+id/history_button"
       android:layout_alignRight="@+id/history_button"
       android:layout_below="@+id/history_button"
       android:layout_marginTop="55dp"
-      android:onClick="help"
-      android:text="@string/help_button" />
+      android:onClick="about"
+      android:text="@string/about_button" />
 
 </RelativeLayout>
 

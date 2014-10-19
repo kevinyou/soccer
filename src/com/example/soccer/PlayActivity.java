@@ -1,5 +1,12 @@
 package com.example.soccer;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.Writer;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Calendar;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Color;
@@ -27,7 +34,7 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 
 	private boolean started, won, toastDisplayed;
 	
-	private Toast victoryToast;
+	private Toast victoryToast, loading;
 	
 	private MapFragment mapFragment;
 	
@@ -35,15 +42,17 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 	
 	private Location currentLocation;
 
-	private LocationClient locationClient;
+	private LocationClient locationClient; 
 	
 	private LocationRequest locationRequest;
 	
+	private ArrayList<String> history;
+	
+	private static final Calendar c = Calendar.getInstance();
+	
 	private static final double EARTH_RADIUS = 6371000;
 	
-	private double ballLat, ballLong,
-				ballLatV, ballLongV,
-				ballAccel;
+	private double ballLat, ballLong;
 	
 	private Circle goalCircle;
 	private Circle ballCircle;
@@ -55,6 +64,7 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 		setContentView(R.layout.activity_play);
 		
 		victoryToast = Toast.makeText(this, "You won! Tap the screen to make a new field.", 2000);
+		loading = Toast.makeText(this, "Loading...", Toast.LENGTH_LONG);
 		
 		locationRequest = LocationRequest.create();
 		locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
@@ -87,13 +97,16 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 		settings.setZoomControlsEnabled(false);
 		settings.setMyLocationButtonEnabled(false);
 		
+		loading.show();
+		
 	}
 	
 	public void startNewGame(){
 		
+		history = new ArrayList<String>();
+		
 		locationClient.requestLocationUpdates(locationRequest, this);
 		currentLocation = locationClient.getLastLocation();
-		Log.v("TESTINGU", "WTFBBZ" + currentLocation.getLatitude() + " " + currentLocation.getLongitude());
 		LatLng currentLocLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
 		googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLocLatLng, 20));
 		
@@ -117,28 +130,26 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 		CircleOptions ballCircleOptions = new CircleOptions()
 			.center(new LatLng(ballLat, ballLong))
 			.fillColor(Color.BLACK)
-			.radius(10);
+			.radius(15);
 		ballCircle = googleMap.addCircle(ballCircleOptions);
 	}
 
 	public void kick(){
+		Log.v("TESTINGU", "FALCON KICK");
 		LatLng playerLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
 		LatLng ballLatLng = new LatLng(ballLat, ballLong);
-		long start = System.currentTimeMillis();
 		double playerBallDist = dist(playerLatLng, ballLatLng);
-		if (playerBallDist <= 10){
+		if (playerBallDist <= 20){
+			history.add(c.getTime() + " " + playerLatLng);
 			LatLng goalLatLng = goalCircle.getCenter();
-			//ballLatLng = ballMove(ballLatLng, bearing(playerLatLng, ballLatLng), playerBallDist);
-			ballLatLng = goalCircle.getCenter();
+			ballLatLng = ballMove(ballLatLng, bearing(playerLatLng, ballLatLng), playerBallDist);
+			//ballLatLng = goalCircle.getCenter();
 			ballLat = ballLatLng.latitude;
 			ballLong = ballLatLng.longitude;
-			Log.v("TESTINGU", "FALCON KICK" + ballLatLng);
 			if (dist(goalLatLng, ballLatLng) <= goalCircle.getRadius()){
 				won = true;
 			}
 		}
-		long finish = System.currentTimeMillis();
-		Log.v("TIMING", "kick() calculations took " + (finish - start) + " milliseconds");
 	}
 	
 	public double dist(LatLng a, LatLng b){
@@ -173,8 +184,8 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 	
 	public LatLng ballMove(LatLng initial, double bearing, double distance){
 		
-		if (distance == 0) distance = 10;
-		else distance = 10 / distance + 10;
+		if (distance == 0) distance = 50;
+		else distance = 40 / distance + 18;
 		
 		double lata = Math.toRadians(initial.latitude);
 		double lnga = Math.toRadians(initial.longitude);
@@ -208,11 +219,26 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 	@Override
 	public void onLocationChanged(Location newLoc) {
 		currentLocation = newLoc;
-		Log.v("TESTINGU", "UPDATED BITCH" + currentLocation.getLatitude() + " " + currentLocation.getLongitude());
+		Log.v("TESTINGU", "UPDATED " + currentLocation.getLatitude() + " " + currentLocation.getLongitude());
 		googleMap.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude())));
 		if (started && won && !toastDisplayed){
 			toastDisplayed = true;
 			victoryToast.show();
+			try {
+				File historyLog = new File(new URI("/history.log"));
+				historyLog.delete();
+				historyLog.createNewFile();
+				Writer writer = new FileWriter(historyLog);
+				for (String entry : history){
+					writer.append(entry + "\n");
+				}
+				writer.flush();
+				writer.close();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 		}
 		draw();
 	}
@@ -226,6 +252,8 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 	@Override
 	public void onConnected(Bundle arg0) {
 		// TODO Auto-generated method stub
+		loading.cancel();
+		Log.v("CONNECTION", "WE GOOD YO!");
 		startNewGame();
 	}
 
