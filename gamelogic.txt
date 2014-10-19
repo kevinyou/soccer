@@ -1,0 +1,81 @@
+private LatLng player;
+private LatLng goal;
+private LatLng ball;
+
+private Circle goalCircle;
+private Circle ballCircle;
+
+private static final double EARTH_RADIUS = 6371000; // in meters
+
+// called when map fully loaded
+public void startCame()
+{
+	player; // current user LatLng
+	
+	goalCenter = new LatLng(player.latitude, player.longitude + .001);
+	// goal is a circle radius 10 with center at goalCenter
+	
+	ball = new LatLng(player.latitude, player.longitude - .001);
+	update();
+}
+
+// called at the end of a proper move
+public void update()
+{
+	// remove previous drawings
+	if (ballCircle != null)
+		ballCircle.remove();
+	if (goalCircle != null)
+		goalCircle.remove();
+
+	// draw goal
+	CircleOptions circleOptions;
+	
+	circleOptions = new CircleOptions()
+    .center(goal)
+    .radius(1000)); // In meters
+	goalCircle = myMap.addCircle(circleOptions);
+
+		
+	// draw ball
+	circleOptions = new CircleOptions()
+    .center(ball)
+    .radius(100)); // In meters
+	ballCircle = myMap.addCircle(circleOptions);
+	
+	
+	
+}
+
+
+// player presss button to kick ball
+public boolean kick()
+{
+	if (dist(player, ball) > 10)
+		return false; // too far away
+
+	ball = new LatLng(ball.latitude, ball.longitude - .001);
+	update();
+	if (dist(goalCenter, ball) < 10)
+		return true; // win
+	else
+		return false; // continue
+}
+
+// does math in meters; hopefully fast enough
+public int dist(LatLng a, LatLng b)
+{
+	// convert to radians first
+
+	
+	double alat = Math.toRadians(a.latitude);
+	double alng = Math.toRadians(a.longitude);
+	double blat = Math.toRadians(b.latitude);
+	double blng = Math.toRadians(b.longitude);
+	
+	double a = Math.pow(Math.sin((alat - blat)/2), 2) + Math.cos(alat) * Math.cos(blat) * Math.pow(Math.sin((alng - blng)/2), 2);
+	double c = 2 * Math.atan2( Math.sqrt(a), Math.sqrt(1−a))
+	double d = EARTH_RADIUS * c
+
+	return d;
+}
