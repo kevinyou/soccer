@@ -19,6 +19,7 @@ import com.google.android.gms.maps.model.LatLng;
 public class PlayActivity extends Activity implements LocationListener, GooglePlayServicesClient.ConnectionCallbacks, GooglePlayServicesClient.OnConnectionFailedListener{
 
 	private MapFragment mapFragment;
+	private GoogleMap googleMap;
 	private LocationClient locationClient;
 	private Location currentLocation;
 
@@ -30,13 +31,10 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 		
 		locationClient = new LocationClient(this, this, this);
 		locationClient.connect();
-		currentLocation = locationClient.getLastLocation();
-		LatLng currentLocLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
 		
 		mapFragment = (MapFragment)getFragmentManager().findFragmentById(R.id.map);
-		GoogleMap googleMap = mapFragment.getMap();
+		googleMap = mapFragment.getMap();
 		googleMap.setMyLocationEnabled(true);
-		googleMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocLatLng));
 	}
 
 	@Override
@@ -91,12 +89,13 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 	@Override
 	public void onConnected(Bundle arg0) {
 		// TODO Auto-generated method stub
-		
+		currentLocation = locationClient.getLastLocation();
+		LatLng currentLocLatLng = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+		googleMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocLatLng));
 	}
 
 	@Override
 	public void onDisconnected() {
-		// TODO Auto-generated method stub
-		
+		//connection lost
 	}
 }
