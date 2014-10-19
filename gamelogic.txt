@@ -79,3 +79,51 @@ public int dist(LatLng a, LatLng b)
 
 	return d;
 }
+-------------------------------
+public boolean kick()
+{
+	double playerBallDist = dist(player, ball);
+
+	if (playerBallDist > 10)
+		return false; // too far away
+
+	ball = ballMove(ball, bearing(player, ball), playerBallDist);
+	update();
+	if (dist(goalCenter, ball) < 10)
+		return true; // win
+	else
+		return false; // continue
+}
+
+public double bearing(LatLng a, LatLng b)
+{
+		
+	double alat = Math.toRadians(a.latitude);
+	double alng = Math.toRadians(a.longitude);
+	double blat = Math.toRadians(b.latitude);
+	double blng = Math.toRadians(b.longitude);
+	
+	double y = Math.sin(blng - alng) * Math.cos(alat);
+	double x = Math.cos(alat) * Math.sin(blat) -
+				Math.sin(alat) * Mah.cos(blat) * Math.cos(blng - alng);
+	
+	double bearing = Math.toDegrees(atan2(y, x));
+	return bearing;
+}
+
+public LatLng ballMove(LatLng initial, double bearing, double distance)
+{
+	// closer you are to the ball further you kick and vice versa
+	distance = 10/distance; // vary as needed
+	
+	double lata = initial.latitude;
+	double lngb = initial.longitude;
+	
+	double finalLat = Math.asin(Math.sin(lata) * Math.cos(distance / EARTH_RADIUS) +
+	Math.cos(lata) * Math.sin(distance / EARTH_RADIUS) * Math.cos(bearing));
+	
+	double finalLng = lnga + Math.atan2(Math.sin(bearing) * Math.sin(distance / EARTH_RADIUS) * Math.cos(lata),
+	Math.cos(distance / EARTH_RADIUS) - Math.sin(lata)* Math.sin(finalLat));
+
+	return new LatLng(finalLat, finalLng);
+}
