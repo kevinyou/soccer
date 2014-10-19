@@ -25,7 +25,7 @@ import com.google.android.gms.maps.model.LatLng;
 
 public class PlayActivity extends Activity implements LocationListener, GooglePlayServicesClient.ConnectionCallbacks, GooglePlayServicesClient.OnConnectionFailedListener{
 
-	private boolean won, toastDisplayed;
+	private boolean started, won, toastDisplayed;
 	
 	private Toast victoryToast;
 	
@@ -71,13 +71,13 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 		
 		googleMap.setOnMapClickListener(new GoogleMap.OnMapClickListener(){
 			public void onMapClick(LatLng point){
-				//kick ball
-//				if (won){
-//					startNewGame();
-//				} else {
-//					kick();
-//				}
-				kick();
+				if (started){
+					if (won){
+						startNewGame();
+					} else {
+						kick();
+					}
+				}
 			}
 		});
 		
@@ -91,9 +91,6 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 	
 	public void startNewGame(){
 		
-		won = false;
-		toastDisplayed = false;
-		
 		locationClient.requestLocationUpdates(locationRequest, this);
 		currentLocation = locationClient.getLastLocation();
 		Log.v("TESTINGU", "WTFBBZ" + currentLocation.getLatitude() + " " + currentLocation.getLongitude());
@@ -102,13 +99,17 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 		
 		//generate ball and goal
 		CircleOptions goalCircleOptions = new CircleOptions()
-			.center(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude() - .003))
+			.center(new LatLng(currentLocation.getLatitude() + (.004 * Math.random() - .002), currentLocation.getLongitude() + (.004 * Math.random() - .002)))
 			.radius(50);
 		
 		goalCircle = googleMap.addCircle(goalCircleOptions);
 		
-		ballLat = currentLocation.getLatitude();
-		ballLong = currentLocation.getLongitude() - .0002;
+		ballLat = currentLocation.getLatitude() + (.001 * Math.random() - .0005);
+		ballLong = currentLocation.getLongitude() + (.001 * Math.random() - .0005);
+		
+		won = false;
+		toastDisplayed = false;
+		started = true;
 	}
 	
 	public void draw(){
@@ -127,12 +128,13 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 		double playerBallDist = dist(playerLatLng, ballLatLng);
 		if (playerBallDist <= 10){
 			LatLng goalLatLng = goalCircle.getCenter();
-			ballLatLng = ballMove(ballLatLng, bearing(playerLatLng, ballLatLng), playerBallDist);
+			//ballLatLng = ballMove(ballLatLng, bearing(playerLatLng, ballLatLng), playerBallDist);
+			ballLatLng = goalCircle.getCenter();
 			ballLat = ballLatLng.latitude;
 			ballLong = ballLatLng.longitude;
 			Log.v("TESTINGU", "FALCON KICK" + ballLatLng);
 			if (dist(goalLatLng, ballLatLng) <= goalCircle.getRadius()){
-				//won = true;
+				won = true;
 			}
 		}
 		long finish = System.currentTimeMillis();
@@ -171,9 +173,9 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 	
 	public LatLng ballMove(LatLng initial, double bearing, double distance){
 		
-		if (distance == 0) return initial;
+		if (distance == 0) distance = 10;
+		else distance = 10 / distance + 10;
 		
-		distance = 1 / distance;
 		double lata = Math.toRadians(initial.latitude);
 		double lnga = Math.toRadians(initial.longitude);
 		
@@ -208,7 +210,7 @@ public class PlayActivity extends Activity implements LocationListener, GooglePl
 		currentLocation = newLoc;
 		Log.v("TESTINGU", "UPDATED BITCH" + currentLocation.getLatitude() + " " + currentLocation.getLongitude());
 		googleMap.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude())));
-		if (!toastDisplayed){
+		if (started && won && !toastDisplayed){
 			toastDisplayed = true;
 			victoryToast.show();
 		}
